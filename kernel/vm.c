@@ -486,11 +486,33 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   }
 }
 
+void
+vmprint_pte(pagetable_t pagetable, int level, uint64 parent_va) {
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if (pte & PTE_V) { // if page table entry is valid
+      uint64 va = (i << PXSHIFT(level)) + parent_va;
+      uint64 pa = PTE2PA(pte);
+      for (int j = 0; j < 3 - level; j++)
+        printf(" ..");
+
+      // print pte 
+      printf("%p: pte %p pa %p\n", (void *)va, (void *)pte, (void *)pa);
+      
+      // recurse to lower level page table
+      if (level > 0 && !(pte & PTE_LEAF(pte))) {
+        vmprint_pte((pagetable_t)pa, level - 1, va);
+      }
+    }
+  }
+}
 
 #ifdef LAB_PGTBL
 void
 vmprint(pagetable_t pagetable) {
   // your code here
+  printf("page table %p\n", (void *)pagetable);
+  vmprint_pte(pagetable, 2, 0);
 }
 #endif
 
