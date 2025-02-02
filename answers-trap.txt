@@ -1,0 +1,53 @@
+reg    | name  | saver  | description
+-------+-------+--------+------------
+x0     | zero  |        | hardwired zero
+x1     | ra    | caller | return address
+x2     | sp    | callee | stack pointer
+x3     | gp    |        | global pointer
+x4     | tp    |        | thread pointer
+x5-7   | t0-2  | caller | temporary registers
+x8     | s0/fp | callee | saved register / frame pointer
+x9     | s1    | callee | saved register
+x10-11 | a0-1  | caller | function arguments / return values
+x12-17 | a2-7  | caller | function arguments
+x18-27 | s2-11 | callee | saved registers
+x28-31 | t3-6  | caller | temporary registers
+pc     |       |        | program counter
+
+
+
+1. Which registers contain arguments to functions? For example, which register holds 13 in main's call to printf?
+-> Registers a0-a7.
+For example, below part of call.asm show how 13 is stored in a2.
+Furthermore, 12 (which is the result of f(8)+1) is stored in a1
+printf("%d %d\n", f(8)+1, 13); 
+  2c:	4635                	li	a2,13
+  2e:	45b1                	li	a1,12
+  30:	00001517          	auipc	a0,0x1
+
+
+2. Where is the call to function f in the assembly code for main? Where is the call to g? (Hint: the compiler may inline functions.)
+-> No explicit calls are made. The complier has optimized the fuctions and instead of calling it, it directly computes 8+3+1=12 then puts it in li.
+
+
+3. At what address is the function printf located?
+-> Below line shows that printf is at address 0x6e2
+  38:	6aa000ef          	jal	6e2 <printf>
+
+
+4. What value is in the register ra just after the jalr to printf in main?
+-> jal stores the returna ddress in ra, so after the jal instruction, the ra will contain the address 0x3c -- the address of the next instruction.
+
+5. What is the output of the given code?
+-> HE110 World
+57616 in hex is 0xE110
+0x00646c72 in memory is stored as 72:(ASCII) r, 6c:l, 64:d, 00:\0 (ordered by lower to higher address)
+Little endian stores lower significant byte first, so it prints rld.
+For big endian, i has to be set differently.
+i = 0x726c6400 would be 00:\0, 64:d, 6c:l, 72:r, and big endian will store bytes from higher address.
+
+6. What is going to be printed after 'y='? Why does this happen?
+-> some garbage value
+printf will expect two integer arguemts, given two %d format specifiers, but the given code shows only one arguemnt.
+Therefore, printf will use whatever value happens to be in the register that would have held the second argument. This value is unpredictable.
+This happens because printf doesn't actually know how many arguments were actually passed, but merely reads from the registers where the argumens should be. 
